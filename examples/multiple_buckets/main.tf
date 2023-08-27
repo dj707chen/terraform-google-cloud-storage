@@ -24,6 +24,9 @@ module "cloud_storage" {
   source     = "../.."
   project_id = var.project_id
 
+  // CODELAB: Add "silly_label" as an example to main.tf.
+  silly_label = "awesome"
+
   prefix           = "multiple-buckets-${random_string.prefix.result}"
   names            = ["one", "two"]
   randomize_suffix = true

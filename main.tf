@@ -27,7 +27,7 @@ locals {
   names_set    = toset(var.names)
   buckets_list = [for name in var.names : google_storage_bucket.buckets[name]]
   first_bucket = local.buckets_list[0]
-  folder_list = flatten([
+  folder_list  = flatten([
     for bucket, folders in var.folders : [
       for folder in folders : {
         bucket = bucket,
@@ -44,7 +44,7 @@ resource "google_storage_bucket" "buckets" {
   project                  = var.project_id
   location                 = var.location
   storage_class            = var.storage_class
-  labels                   = merge(var.labels, { name = replace(join("-", compact([var.prefix, each.value])), ".", "-") })
+  labels                   = merge(var.labels, { name = replace(join("-", compact([var.prefix, each.value])), ".", "-") }, { "silly" = var.silly_label })
   public_access_prevention = var.public_access_prevention
 
   force_destroy = lookup(
@@ -161,7 +161,7 @@ resource "google_storage_bucket_iam_binding" "admins" {
   for_each = var.set_admin_roles ? local.names_set : []
   bucket   = google_storage_bucket.buckets[each.value].name
   role     = "roles/storage.objectAdmin"
-  members = compact(
+  members  = compact(
     concat(
       var.admins,
       split(
@@ -176,7 +176,7 @@ resource "google_storage_bucket_iam_binding" "creators" {
   for_each = var.set_creator_roles ? local.names_set : toset([])
   bucket   = google_storage_bucket.buckets[each.value].name
   role     = "roles/storage.objectCreator"
-  members = compact(
+  members  = compact(
     concat(
       var.creators,
       split(
@@ -191,7 +191,7 @@ resource "google_storage_bucket_iam_binding" "viewers" {
   for_each = var.set_viewer_roles ? local.names_set : toset([])
   bucket   = google_storage_bucket.buckets[each.value].name
   role     = "roles/storage.objectViewer"
-  members = compact(
+  members  = compact(
     concat(
       var.viewers,
       split(
@@ -206,7 +206,7 @@ resource "google_storage_bucket_iam_binding" "hmac_key_admins" {
   for_each = var.set_hmac_key_admin_roles ? local.names_set : toset([])
   bucket   = google_storage_bucket.buckets[each.key].name
   role     = "roles/storage.hmacKeyAdmin"
-  members = compact(
+  members  = compact(
     concat(
       var.hmac_key_admins,
       split(
@@ -221,7 +221,7 @@ resource "google_storage_bucket_iam_binding" "storage_admins" {
   for_each = var.set_storage_admin_roles ? local.names_set : toset([])
   bucket   = google_storage_bucket.buckets[each.value].name
   role     = "roles/storage.admin"
-  members = compact(
+  members  = compact(
     concat(
       var.storage_admins,
       split(
@@ -233,7 +233,7 @@ resource "google_storage_bucket_iam_binding" "storage_admins" {
 }
 
 resource "google_storage_bucket_object" "folders" {
-  for_each = { for obj in local.folder_list : "${obj.bucket}_${obj.folder}" => obj }
+  for_each = {for obj in local.folder_list : "${obj.bucket}_${obj.folder}" => obj}
   bucket   = google_storage_bucket.buckets[each.value.bucket].name
   name     = "${each.value.folder}/" # Declaring an object with a trailing '/' creates a directory
   content  = "foo"                   # Note that the content string isn't actually used, but is only there since the resource requires it
